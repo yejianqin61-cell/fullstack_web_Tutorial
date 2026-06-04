@@ -1,0 +1,50 @@
+# ===== 依赖 =====
+node_modules/
+
+# ===== SQLite 数据库 =====
+*.db
+*.db-shm
+*.db-wal
+
+# ===== 环境变量 =====
+.env
+.env.local
+.env.*.local
+
+# ===== 日志 =====
+*.log
+npm-debug.log*
+
+# ===== OS 系统文件 =====
+# macOS
+.DS_Store
+.AppleDouble
+.LSOverride
+# Windows
+Thumbs.db
+ehthumbs.db
+Desktop.ini
+$RECYCLE.BIN/
+# Linux
+*~
+
+# ===== IDE / 编辑器 =====
+.vscode/
+.idea/
+*.swp
+*.swo
+*~
+.project
+.classpath
+.settings/
+
+# ===== 打包 / 构建产物 =====
+dist/
+build/
+*.tgz
+*.tar.gz
+
+# ===== 密钥 / 证书 =====
+*.pem
+*.key
+*.cert

@@ -1,0 +1,67 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>博客首页</title>
+  <link rel="stylesheet" href="/css/style.css">
+</head>
+<body>
+
+<!-- 导航栏 -->
+<nav class="navbar">
+  <a href="/" class="logo">📝 简易博客</a>
+  <div class="nav-links" id="navLinks"></div>
+</nav>
+
+<!-- 文章列表 -->
+<div class="container">
+  <div class="page-header">
+    <h1>最新文章</h1>
+  </div>
+  <div id="alertBox" class="alert"></div>
+  <div id="postList"></div>
+</div>
+
+<script src="/js/api.js"></script>
+<script src="/js/auth.js"></script>
+<script src="/js/main.js"></script>
+<script>
+// 加载文章列表
+async function loadPosts() {
+  const container = document.getElementById('postList');
+  try {
+    const posts = await get('/posts');
+    if (posts.length === 0) {
+      container.innerHTML = `
+        <div class="empty-state">
+          <p>📭 还没有文章</p>
+          ${isLoggedIn()
+            ? '<a href="/create.html" class="btn btn-primary">写第一篇文章</a>'
+            : ''}
+        </div>`;
+      return;
+    }
+
+    const html = posts.map(p => `
+      <div class="post-item">
+        <div class="post-title">
+          <a href="/detail.html?id=${p.id}">${escapeHtml(p.title)}</a>
+        </div>
+        <div class="post-meta">
+          👤 ${escapeHtml(p.author)} · 🕐 ${formatDate(p.created_at)}
+        </div>
+        <div class="post-summary">${escapeHtml(p.summary || '')}</div>
+      </div>
+    `).join('');
+
+    container.innerHTML = `<ul class="post-list">${html}</ul>`;
+  } catch (err) {
+    container.innerHTML = `<div class="empty-state"><p>加载失败：${escapeHtml(err.message)}</p></div>`;
+  }
+}
+
+document.addEventListener('DOMContentLoaded', loadPosts);
+</script>
+</body>
+</html>

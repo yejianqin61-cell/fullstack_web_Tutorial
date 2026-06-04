@@ -1,0 +1,80 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>文章详情</title>
+  <link rel="stylesheet" href="/css/style.css">
+</head>
+<body>
+
+<!-- 导航栏 -->
+<nav class="navbar">
+  <a href="/" class="logo">📝 简易博客</a>
+  <div class="nav-links" id="navLinks"></div>
+</nav>
+
+<div class="container">
+  <div id="alertBox" class="alert"></div>
+  <div id="postDetail"></div>
+</div>
+
+<script src="/js/api.js"></script>
+<script src="/js/auth.js"></script>
+<script src="/js/main.js"></script>
+<script>
+async function loadDetail() {
+  const params = new URLSearchParams(window.location.search);
+  const id = params.get('id');
+  const container = document.getElementById('postDetail');
+
+  if (!id) {
+    container.innerHTML = '<div class="empty-state"><p>文章 ID 无效</p></div>';
+    return;
+  }
+
+  try {
+    const post = await get(`/posts/${id}`);
+    const user = getCurrentUser();
+    const isOwner = user && user.id === post.user_id;
+
+    // 面包屑
+    const actionsHtml = isOwner ? `
+      <div class="post-actions">
+        <a href="/create.html?id=${post.id}" class="btn btn-secondary">✏️ 编辑</a>
+        <button class="btn btn-danger" onclick="deletePost(${post.id})">🗑 删除</button>
+      </div>
+    ` : '';
+
+    container.innerHTML = `
+      <div class="post-detail">
+        <h1 class="post-title">${escapeHtml(post.title)}</h1>
+        <div class="post-meta">
+          👤 ${escapeHtml(post.author)} · 🕐 ${formatDate(post.created_at)}
+          ${post.updated_at !== post.created_at ? ` · 更新于 ${formatDate(post.updated_at)}` : ''}
+        </div>
+        <div class="post-content">${escapeHtml(post.content)}</div>
+        ${actionsHtml}
+      </div>
+    `;
+  } catch (err) {
+    container.innerHTML = `<div class="empty-state"><p>${escapeHtml(err.message)}</p></div>`;
+  }
+}
+
+async function deletePost(id) {
+  if (!confirm('确定要删除这篇文章吗？此操作不可撤销。')) return;
+
+  try {
+    await del(`/posts/${id}`);
+    alert('删除成功');
+    window.location.href = '/';
+  } catch (err) {
+    showAlert('alertBox', err.message, 'error');
+  }
+}
+
+document.addEventListener('DOMContentLoaded', loadDetail);
+</script>
+</body>
+</html>

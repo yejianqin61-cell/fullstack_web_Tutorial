@@ -1,0 +1,98 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>发布文章</title>
+  <link rel="stylesheet" href="/css/style.css">
+</head>
+<body>
+
+<!-- 导航栏 -->
+<nav class="navbar">
+  <a href="/" class="logo">📝 简易博客</a>
+  <div class="nav-links" id="navLinks"></div>
+</nav>
+
+<div class="container">
+  <div class="page-header">
+    <h1 id="pageTitle">✏️ 写文章</h1>
+  </div>
+  <div id="alertBox" class="alert"></div>
+  <form id="postForm">
+    <div class="form-group">
+      <label for="title">标题</label>
+      <input type="text" id="title" placeholder="请输入文章标题" required>
+    </div>
+    <div class="form-group">
+      <label for="content">内容</label>
+      <textarea id="content" placeholder="请输入文章内容..." required></textarea>
+    </div>
+    <div style="display: flex; gap: 10px;">
+      <button type="submit" class="btn btn-primary" id="submitBtn">发 布</button>
+      <a href="/" class="btn btn-secondary">取 消</a>
+    </div>
+  </form>
+</div>
+
+<script src="/js/api.js"></script>
+<script src="/js/auth.js"></script>
+<script src="/js/main.js"></script>
+<script>
+// 检查登录
+if (!isLoggedIn()) {
+  window.location.href = '/login.html';
+}
+
+const params = new URLSearchParams(window.location.search);
+const editId = params.get('id'); // 有 id 则为编辑模式
+let isEditMode = !!editId;
+
+// 编辑模式：加载已有文章
+async function loadPost() {
+  if (!editId) return;
+
+  try {
+    const post = await get(`/posts/${editId}`);
+    const user = getCurrentUser();
+    if (user && user.id !== post.user_id) {
+      alert('无权编辑此文章');
+      window.location.href = '/';
+      return;
+    }
+    document.getElementById('title').value = post.title;
+    document.getElementById('content').value = post.content;
+    document.getElementById('pageTitle').textContent = '✏️ 编辑文章';
+    document.getElementById('submitBtn').textContent = '更 新';
+  } catch (err) {
+    showAlert('alertBox', err.message, 'error');
+  }
+}
+
+// 提交表单
+document.getElementById('postForm').addEventListener('submit', async (e) => {
+  e.preventDefault();
+  hideAlert('alertBox');
+
+  const title = document.getElementById('title').value.trim();
+  const content = document.getElementById('content').value.trim();
+
+  try {
+    if (isEditMode) {
+      await put(`/posts/${editId}`, { title, content });
+      showAlert('alertBox', '更新成功！正在跳转...', 'success');
+      setTimeout(() => { window.location.href = `/detail.html?id=${editId}`; }, 500);
+    } else {
+      const data = await post('/posts', { title, content });
+      showAlert('alertBox', '发布成功！正在跳转...', 'success');
+      setTimeout(() => { window.location.href = `/detail.html?id=${data.postId}`; }, 500);
+    }
+  } catch (err) {
+    showAlert('alertBox', err.message, 'error');
+  }
+});
+
+document.addEventListener('DOMContentLoaded', loadPost);
+</script>
+</body>
+</html>

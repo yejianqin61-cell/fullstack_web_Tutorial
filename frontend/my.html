@@ -1,0 +1,84 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>我的文章</title>
+  <link rel="stylesheet" href="/css/style.css">
+</head>
+<body>
+
+<!-- 导航栏 -->
+<nav class="navbar">
+  <a href="/" class="logo">📝 简易博客</a>
+  <div class="nav-links" id="navLinks"></div>
+</nav>
+
+<div class="container">
+  <div class="page-header">
+    <h1>📄 我的文章</h1>
+  </div>
+  <div id="alertBox" class="alert"></div>
+  <div id="postList"></div>
+</div>
+
+<script src="/js/api.js"></script>
+<script src="/js/auth.js"></script>
+<script src="/js/main.js"></script>
+<script>
+// 检查登录
+if (!isLoggedIn()) {
+  window.location.href = '/login.html';
+}
+
+async function loadMyPosts() {
+  const container = document.getElementById('postList');
+
+  try {
+    const posts = await get('/posts/my');
+    if (posts.length === 0) {
+      container.innerHTML = `
+        <div class="empty-state">
+          <p>📭 你还没有发布文章</p>
+          <a href="/create.html" class="btn btn-primary">写第一篇文章</a>
+        </div>`;
+      return;
+    }
+
+    const html = posts.map(p => `
+      <div class="post-item">
+        <div class="post-title">
+          <a href="/detail.html?id=${p.id}">${escapeHtml(p.title)}</a>
+        </div>
+        <div class="post-meta">
+          🕐 ${formatDate(p.created_at)}
+          ${p.updated_at !== p.created_at ? ` · 更新于 ${formatDate(p.updated_at)}` : ''}
+        </div>
+        <div class="post-actions">
+          <a href="/create.html?id=${p.id}" class="btn btn-secondary btn-sm">编辑</a>
+          <button class="btn btn-danger btn-sm" onclick="deleteMyPost(${p.id})">删除</button>
+        </div>
+      </div>
+    `).join('');
+
+    container.innerHTML = `<ul class="post-list">${html}</ul>`;
+  } catch (err) {
+    container.innerHTML = `<div class="empty-state"><p>加载失败：${escapeHtml(err.message)}</p></div>`;
+  }
+}
+
+async function deleteMyPost(id) {
+  if (!confirm('确定要删除这篇文章吗？此操作不可撤销。')) return;
+
+  try {
+    await del(`/posts/${id}`);
+    loadMyPosts(); // 刷新列表
+  } catch (err) {
+    showAlert('alertBox', err.message, 'error');
+  }
+}
+
+document.addEventListener('DOMContentLoaded', loadMyPosts);
+</script>
+</body>
+</html>
